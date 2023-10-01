@@ -24,6 +24,56 @@ double scale_ratio_w, scale_ratio_h;
 am::analyze::algorithm::DescObjects rect_objs;
 double width_o,  height_o, width, height;
 
+void on_min_pixels_changed(GtkRange *range, gpointer data)
+{
+    auto conf = amApi.getConfiguration();
+
+    gdouble value = gtk_range_get_value(range);
+    conf->MinPixelsForObject = static_cast<size_t>(value);
+    g_print("Scale value changed to %f\n", value);
+    amApi.setConfiguration(conf);
+}
+
+void on_step_changed(GtkRange *range, gpointer data)
+{
+    auto conf = amApi.getConfiguration();
+
+    gdouble value = gtk_range_get_value(range);
+    conf->PixelStep = static_cast<size_t>(value);
+    g_print("Scale step changed to %f\n", value);
+    amApi.setConfiguration(conf);
+}
+
+void on_time_limit_changed(GtkRange *range, gpointer data)
+{
+    auto conf = amApi.getConfiguration();
+
+    gdouble value = gtk_range_get_value(range);
+    conf->CalculationTimeLimit = static_cast<double>(value);
+    g_print("Scale time lim changed to %f\n", value);
+    amApi.setConfiguration(conf);
+}
+
+void on_affinity_changed(GtkRange *range, gpointer data)
+{
+    auto conf = amApi.getConfiguration();
+
+    gdouble value = gtk_range_get_value(range);
+    conf->AffinityThreshold = static_cast<size_t>(value);
+    g_print("Scale affinity changed to %f\n", value);
+    amApi.setConfiguration(conf);
+}
+
+void on_threads_mult_changed(GtkRange *range, gpointer data)
+{
+    auto conf = amApi.getConfiguration();
+
+    gdouble value = gtk_range_get_value(range);
+    conf->ThreadsMultiplier = static_cast<double>(value);
+    g_print("Scale ThreadsMultiplier changed to %f\n", value);
+    amApi.setConfiguration(conf);
+}
+
 static void open_dialog (GtkWidget *button, gpointer window)
 {
     GtkWidget *dialog;
@@ -109,7 +159,7 @@ int main(int argc, char *argv[]) {
     GtkWidget *box;
     
     GdkPixbuf *pixbuf;
-    GtkWidget *scale;
+    GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
     int width = WINDOW_WIDTH;
     int height = WINDOW_HEIGHT;
     
@@ -134,6 +184,8 @@ int main(int argc, char *argv[]) {
 
     pixbuf = gdk_pixbuf_scale_simple(pixbuf, width, height, GDK_INTERP_BILINEAR);
 
+    auto conf = amApi.getConfiguration();
+
     image = gtk_image_new_from_pixbuf(pixbuf);
     g_signal_connect_after(image, "draw", G_CALLBACK(draw_rectangle), NULL);
     gtk_box_pack_start(GTK_BOX(box), image, TRUE, TRUE, 0);
@@ -142,13 +194,41 @@ int main(int argc, char *argv[]) {
     g_signal_connect(button, "clicked", G_CALLBACK(open_dialog), (gpointer)image);
     gtk_box_pack_start(GTK_BOX(box), button, FALSE, FALSE, 0);
 
-    /*button2 = gtk_button_new_with_label("Click me too!");
-    g_signal_connect(button2, "clicked", G_CALLBACK(on_button_clicked1), (gpointer)image);
-    gtk_box_pack_start(GTK_BOX(box), button2, FALSE, FALSE, 0);
+    // min pixs in object
+    range_min_pix = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 120.0, 1);
+    gtk_scale_add_mark (GTK_SCALE (range_min_pix), 0, GTK_POS_TOP, "MinPixs");
+    g_signal_connect(range_min_pix, "value-changed", G_CALLBACK(on_min_pixels_changed), NULL);
+    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->MinPixelsForObject);
+    gtk_box_pack_start(GTK_BOX(box), range_min_pix, FALSE, FALSE, 0);
 
-    scale = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 120.0, 1.0);
-    g_signal_connect(scale, "value-changed", G_CALLBACK(on_scale_changed), NULL);*/
-    gtk_box_pack_start(GTK_BOX(box), scale, FALSE, FALSE, 0);
+    // step
+    range_step = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 20.0, 2);
+    gtk_scale_add_mark (GTK_SCALE (range_step), 0, GTK_POS_TOP, "Step");
+    g_signal_connect(range_step, "value-changed", G_CALLBACK(on_step_changed), NULL);
+    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->PixelStep);
+    gtk_box_pack_start(GTK_BOX(box), range_step, FALSE, FALSE, 0);
+
+    // time limit
+    range_time_limit = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 0.5);
+    gtk_scale_add_mark (GTK_SCALE (range_time_limit), 0, GTK_POS_TOP, "TimeLim");
+    g_signal_connect(range_time_limit, "value-changed", G_CALLBACK(on_time_limit_changed), NULL);
+    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->CalculationTimeLimit);
+    gtk_box_pack_start(GTK_BOX(box), range_time_limit, FALSE, FALSE, 0);
+
+    // affinity treshold
+    range_affinity_treshold = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 764, 1);
+    gtk_scale_add_mark (GTK_SCALE (range_affinity_treshold), 0, GTK_POS_TOP, "Aff");
+    g_signal_connect(range_affinity_treshold, "value-changed", G_CALLBACK(on_affinity_changed), NULL);
+    gtk_range_set_value(GTK_RANGE (range_affinity_treshold), conf->AffinityThreshold);
+    gtk_box_pack_start(GTK_BOX(box), range_affinity_treshold, FALSE, FALSE, 0);
+
+
+    // threads multiplier
+    range_threads_mult = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 2);
+    gtk_scale_add_mark (GTK_SCALE (range_threads_mult), 0, GTK_POS_TOP, "ThrMult");
+    g_signal_connect(range_threads_mult, "value-changed", G_CALLBACK(on_threads_mult_changed), NULL);
+    gtk_range_set_value(GTK_RANGE (range_threads_mult), conf->ThreadsMultiplier);
+    gtk_box_pack_start(GTK_BOX(box), range_threads_mult, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
