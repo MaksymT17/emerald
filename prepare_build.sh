@@ -1,4 +1,5 @@
+rm -rf aquamarine &&
 git clone https://github.com/MaksymT17/aquamarine.git &&
 cd aquamarine &&
 # hash of working commit which was used in test
-git checkout 558b0e589a29b452b748f401d55f8d5c5f2e9841
+git checkout e96c385911e5172b1afdfe51fc06c44ce29cfac5
