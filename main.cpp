@@ -81,8 +81,9 @@ static void open_dialog (GtkWidget *button, gpointer window)
     dialog = GTK_WIDGET (gtk_file_chooser_native_new ("Choose a file:", GTK_WINDOW (window), GTK_FILE_CHOOSER_ACTION_OPEN, "_Select", "_Cancel"));
 
     GtkFileFilter *filter = gtk_file_filter_new ();
-    gtk_file_filter_set_name (filter, "BMP files");
+    gtk_file_filter_set_name (filter, "BMP/JPG files");
     gtk_file_filter_add_mime_type (filter, "image/bmp");
+    gtk_file_filter_add_mime_type (filter, "image/jpeg");
     gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
     gtk_widget_show_all (dialog);
 
