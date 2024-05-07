@@ -10,8 +10,8 @@
 // example of g++ cmd:
 // g++ main.cpp -std=c++14 -o gtk_am_sample `pkg-config gtk+-3.0 --cflags pkg-config gtk+-3.0 --libs` -I aquamarine aquamarine/build/libaquamarine_lib.a && ./gtk_am_sample
 
-constexpr int WINDOW_WIDTH = 1280;
-constexpr int WINDOW_HEIGHT = 720;
+constexpr int WINDOW_WIDTH = 960;
+constexpr int WINDOW_HEIGHT = 540;
 
 am::AmApi amApi("configuration.csv");
 
@@ -143,12 +143,12 @@ void draw_rectangle(GtkWidget *widget, cairo_t *cr)
     for (auto &rect : rect_objs){
         cairo_set_source_rgb(cr, 0.69, 0.19, 0);
         cairo_set_line_width (cr, 1.0);
-        if(aspect_ratio>0.563){
-            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w+(WINDOW_WIDTH-width)/2, (rect.getMinHeight())/scale_ratio_h,
+        if(aspect_ratio>0.5625){
+            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w+(WINDOW_WIDTH-width)/2 +2, (rect.getMinHeight())/scale_ratio_h,
              (rect.getRight()-rect.getLeft()+1)/scale_ratio_w, (rect.getMaxHeight()-rect.getMinHeight()+1)/scale_ratio_h);
         }else
         {
-            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w, (rect.getMinHeight())/scale_ratio_h+(WINDOW_HEIGHT-height)/2,
+            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w +2, (rect.getMinHeight())/scale_ratio_h+(WINDOW_HEIGHT-height)/2,
              (rect.getRight()-rect.getLeft()+1)/scale_ratio_w, (rect.getMaxHeight()-rect.getMinHeight()+1)/scale_ratio_h);
         }
         cairo_stroke(cr);
@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
     int image_width = gdk_pixbuf_get_width(pixbuf);
     int image_height = gdk_pixbuf_get_height(pixbuf);
     double aspect_ratio = (double)image_height / (double)image_width;
+
     if (aspect_ratio > 1.0) {
         height = width * aspect_ratio;
     } else {
@@ -222,7 +223,6 @@ int main(int argc, char *argv[]) {
     g_signal_connect(range_affinity_treshold, "value-changed", G_CALLBACK(on_affinity_changed), NULL);
     gtk_range_set_value(GTK_RANGE (range_affinity_treshold), conf->AffinityThreshold);
     gtk_box_pack_start(GTK_BOX(box), range_affinity_treshold, FALSE, FALSE, 0);
-
 
     // threads multiplier
     range_threads_mult = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 2);
