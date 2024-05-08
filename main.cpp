@@ -1,4 +1,4 @@
-// author mv
+// author m
 
 #include <gtk/gtk.h>
 #include <thread>
@@ -22,7 +22,7 @@ GtkWidget *button, *button2;
 double aspect_ratio;
 double scale_ratio_w, scale_ratio_h;
 am::analyze::algorithm::DescObjects rect_objs;
-double width_o,  height_o, width, height;
+double width_o, height_o, width, height;
 
 void on_min_pixels_changed(GtkRange *range, gpointer data)
 {
@@ -74,96 +74,105 @@ void on_threads_mult_changed(GtkRange *range, gpointer data)
     amApi.setConfiguration(conf);
 }
 
-static void open_dialog (GtkWidget *button, gpointer window)
+static void open_dialog(GtkWidget *button, gpointer window)
 {
     GtkWidget *dialog;
 
-    dialog = GTK_WIDGET (gtk_file_chooser_native_new ("Choose a file:", GTK_WINDOW (window), GTK_FILE_CHOOSER_ACTION_OPEN, "_Select", "_Cancel"));
+    dialog = GTK_WIDGET(gtk_file_chooser_native_new("Choose a file:", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, "_Select", "_Cancel"));
 
-    GtkFileFilter *filter = gtk_file_filter_new ();
-    gtk_file_filter_set_name (filter, "BMP/JPG files");
-    gtk_file_filter_add_mime_type (filter, "image/bmp");
-    gtk_file_filter_add_mime_type (filter, "image/jpeg");
-    gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
-    gtk_widget_show_all (dialog);
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(filter, "BMP/JPG files");
+    gtk_file_filter_add_mime_type(filter, "image/bmp");
+    gtk_file_filter_add_mime_type(filter, "image/jpeg");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), filter);
+    gtk_widget_show_all(dialog);
 
-    gint resp = gtk_native_dialog_run (GTK_NATIVE_DIALOG (dialog));
-    g_print ("file selected:%s\n", gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog)));
-
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog)), NULL);
-
-    width_o = gdk_pixbuf_get_width (pixbuf);
-    height_o = gdk_pixbuf_get_height (pixbuf);
-
-    width = gtk_widget_get_allocated_width(image);
-    height = gtk_widget_get_allocated_height(image);
-    aspect_ratio = (double)gdk_pixbuf_get_height(pixbuf) / (double)gdk_pixbuf_get_width(pixbuf);
-
-    //debug of dimensions
-    g_print("original wh %f %f  window wh %f %f\n", width_o, height_o, width, height);
-    if (aspect_ratio > 1.0) {
-        height = width * aspect_ratio;
-
-    } else {
-        width = height / aspect_ratio;
-    }
-
-    scale_ratio_w =  width_o/ width;
-    scale_ratio_h =  height_o/ height;
-
-    pixbuf = gdk_pixbuf_scale_simple(pixbuf, width, height, GDK_INTERP_BILINEAR);
-    gtk_image_set_from_pixbuf(GTK_IMAGE(image), pixbuf);
-
-    //select base
-    if(base_image.empty()){
-        base_image = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-        gtk_button_set_label(GTK_BUTTON(button), "Load & Compare");
-    }
-    else//comapre
+    gint resp = gtk_native_dialog_run(GTK_NATIVE_DIALOG(dialog));
+    if (resp != GTK_RESPONSE_CANCEL)
     {
-        std::string to_comapre = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-        rect_objs = amApi.compare(base_image, to_comapre);
-        for (auto &rect : rect_objs)
-        {
-            //draw rectangle on image
-            printf("row:%zd col:%zd    row:%zd col:%zd value:%zd\n",
-                rect.getMinHeight(), rect.getLeft(), rect.getMaxHeight(),
-                rect.getRight(), rect.getPixelsCount());
-        }
-        gtk_button_set_label(GTK_BUTTON(button), "Load Base Image!");
-        base_image.clear();
-    }
+        g_print("file selected:%s\n", gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog)));
 
-  gtk_widget_destroy (dialog);
+        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog)), NULL);
+
+        width_o = gdk_pixbuf_get_width(pixbuf);
+        height_o = gdk_pixbuf_get_height(pixbuf);
+
+        width = gtk_widget_get_allocated_width(image);
+        height = gtk_widget_get_allocated_height(image);
+        aspect_ratio = (double)gdk_pixbuf_get_height(pixbuf) / (double)gdk_pixbuf_get_width(pixbuf);
+
+        // debug of dimensions
+        g_print("original wh %f %f  window wh %f %f\n", width_o, height_o, width, height);
+        if (aspect_ratio > 1.0)
+        {
+            height = width * aspect_ratio;
+        }
+        else
+        {
+            width = height / aspect_ratio;
+        }
+
+        scale_ratio_w = width_o / width;
+        scale_ratio_h = height_o / height;
+
+        pixbuf = gdk_pixbuf_scale_simple(pixbuf, width, height, GDK_INTERP_BILINEAR);
+        gtk_image_set_from_pixbuf(GTK_IMAGE(image), pixbuf);
+
+        // select base
+        if (base_image.empty())
+        {
+            base_image = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            gtk_button_set_label(GTK_BUTTON(button), "Load & Compare");
+        }
+        else // compare
+        {
+            std::string to_comapre = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+            rect_objs = amApi.compare(base_image, to_comapre);
+            for (auto &rect : rect_objs)
+            {
+                // draw rectangle on image
+                printf("row:%zd col:%zd    row:%zd col:%zd value:%zd\n",
+                       rect.getMinHeight(), rect.getLeft(), rect.getMaxHeight(),
+                       rect.getRight(), rect.getPixelsCount());
+            }
+            gtk_button_set_label(GTK_BUTTON(button), "Load Base Image!");
+            base_image.clear();
+        }
+    }
+    gtk_widget_destroy(dialog);
 }
 
-void draw_rectangle(GtkWidget *widget, cairo_t *cr) 
+void draw_rectangle(GtkWidget *widget, cairo_t *cr)
 {
-    //g_print("aspect_ratio %f size:%zd\n", aspect_ratio, rect_objs.size());
-    for (auto &rect : rect_objs){
+    // g_print("aspect_ratio %f size:%zd\n", aspect_ratio, rect_objs.size());
+    for (auto &rect : rect_objs)
+    {
         cairo_set_source_rgb(cr, 0.69, 0.19, 0);
-        cairo_set_line_width (cr, 1.0);
-        if(aspect_ratio>0.5625){
-            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w+(WINDOW_WIDTH-width)/2 +2, (rect.getMinHeight())/scale_ratio_h,
-             (rect.getRight()-rect.getLeft()+1)/scale_ratio_w, (rect.getMaxHeight()-rect.getMinHeight()+1)/scale_ratio_h);
-        }else
+        cairo_set_line_width(cr, 1.0);
+        if (aspect_ratio > 0.5625)
         {
-            cairo_rectangle(cr, (rect.getLeft())/scale_ratio_w +2, (rect.getMinHeight())/scale_ratio_h+(WINDOW_HEIGHT-height)/2,
-             (rect.getRight()-rect.getLeft()+1)/scale_ratio_w, (rect.getMaxHeight()-rect.getMinHeight()+1)/scale_ratio_h);
+            cairo_rectangle(cr, (rect.getLeft()) / scale_ratio_w + (WINDOW_WIDTH - width) / 2 + 2, (rect.getMinHeight()) / scale_ratio_h,
+                            (rect.getRight() - rect.getLeft() + 1) / scale_ratio_w, (rect.getMaxHeight() - rect.getMinHeight() + 1) / scale_ratio_h);
+        }
+        else
+        {
+            cairo_rectangle(cr, (rect.getLeft()) / scale_ratio_w + 2, (rect.getMinHeight()) / scale_ratio_h + (WINDOW_HEIGHT - height) / 2,
+                            (rect.getRight() - rect.getLeft() + 1) / scale_ratio_w, (rect.getMaxHeight() - rect.getMinHeight() + 1) / scale_ratio_h);
         }
         cairo_stroke(cr);
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     GtkWidget *window;
     GtkWidget *box;
-    
+
     GdkPixbuf *pixbuf;
     GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
     int width = WINDOW_WIDTH;
     int height = WINDOW_HEIGHT;
-    
+
     gtk_init(&argc, &argv);
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -178,9 +187,12 @@ int main(int argc, char *argv[]) {
     int image_height = gdk_pixbuf_get_height(pixbuf);
     double aspect_ratio = (double)image_height / (double)image_width;
 
-    if (aspect_ratio > 1.0) {
+    if (aspect_ratio > 1.0)
+    {
         height = width * aspect_ratio;
-    } else {
+    }
+    else
+    {
         width = height / aspect_ratio;
     }
 
@@ -198,37 +210,37 @@ int main(int argc, char *argv[]) {
 
     // min pixs in object
     range_min_pix = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 120.0, 1);
-    gtk_scale_add_mark (GTK_SCALE (range_min_pix), 0, GTK_POS_TOP, "MinPixs");
+    gtk_scale_add_mark(GTK_SCALE(range_min_pix), 0, GTK_POS_TOP, "MinPixs");
     g_signal_connect(range_min_pix, "value-changed", G_CALLBACK(on_min_pixels_changed), NULL);
-    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->MinPixelsForObject);
+    gtk_range_set_value(GTK_RANGE(range_time_limit), conf->MinPixelsForObject);
     gtk_box_pack_start(GTK_BOX(box), range_min_pix, FALSE, FALSE, 0);
 
     // step
     range_step = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 20.0, 2);
-    gtk_scale_add_mark (GTK_SCALE (range_step), 0, GTK_POS_TOP, "Step");
+    gtk_scale_add_mark(GTK_SCALE(range_step), 0, GTK_POS_TOP, "Step");
     g_signal_connect(range_step, "value-changed", G_CALLBACK(on_step_changed), NULL);
-    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->PixelStep);
+    gtk_range_set_value(GTK_RANGE(range_time_limit), conf->PixelStep);
     gtk_box_pack_start(GTK_BOX(box), range_step, FALSE, FALSE, 0);
 
     // time limit
     range_time_limit = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 0.5);
-    gtk_scale_add_mark (GTK_SCALE (range_time_limit), 0, GTK_POS_TOP, "TimeLim");
+    gtk_scale_add_mark(GTK_SCALE(range_time_limit), 0, GTK_POS_TOP, "TimeLim");
     g_signal_connect(range_time_limit, "value-changed", G_CALLBACK(on_time_limit_changed), NULL);
-    gtk_range_set_value(GTK_RANGE (range_time_limit), conf->CalculationTimeLimit);
+    gtk_range_set_value(GTK_RANGE(range_time_limit), conf->CalculationTimeLimit);
     gtk_box_pack_start(GTK_BOX(box), range_time_limit, FALSE, FALSE, 0);
 
     // affinity treshold
     range_affinity_treshold = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 764, 1);
-    gtk_scale_add_mark (GTK_SCALE (range_affinity_treshold), 0, GTK_POS_TOP, "Aff");
+    gtk_scale_add_mark(GTK_SCALE(range_affinity_treshold), 0, GTK_POS_TOP, "Aff");
     g_signal_connect(range_affinity_treshold, "value-changed", G_CALLBACK(on_affinity_changed), NULL);
-    gtk_range_set_value(GTK_RANGE (range_affinity_treshold), conf->AffinityThreshold);
+    gtk_range_set_value(GTK_RANGE(range_affinity_treshold), conf->AffinityThreshold);
     gtk_box_pack_start(GTK_BOX(box), range_affinity_treshold, FALSE, FALSE, 0);
 
     // threads multiplier
     range_threads_mult = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 2);
-    gtk_scale_add_mark (GTK_SCALE (range_threads_mult), 0, GTK_POS_TOP, "ThrMult");
+    gtk_scale_add_mark(GTK_SCALE(range_threads_mult), 0, GTK_POS_TOP, "ThrMult");
     g_signal_connect(range_threads_mult, "value-changed", G_CALLBACK(on_threads_mult_changed), NULL);
-    gtk_range_set_value(GTK_RANGE (range_threads_mult), conf->ThreadsMultiplier);
+    gtk_range_set_value(GTK_RANGE(range_threads_mult), conf->ThreadsMultiplier);
     gtk_box_pack_start(GTK_BOX(box), range_threads_mult, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
