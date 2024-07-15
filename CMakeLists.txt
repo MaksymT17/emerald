@@ -16,5 +16,5 @@ include_directories(${GTK_INCLUDE_DIRS} ${SQLite3_INCLUDE_DIRS} ${JPEG_INCLUDE_D
 
 link_directories(${GTK_LIBRARY_DIRS} ./aquamarine/build)
 
-add_executable(am_gui main.cpp)
+add_executable(am_gui main.cpp FileProvider.hpp)
 target_link_libraries(am_gui ${GTK_LIBRARIES} aquamarine_lib ${CMAKE_THREAD_LIBS_INIT} ${SQLite3_LIBRARIES} ${JPEG_LIBRARIES})
