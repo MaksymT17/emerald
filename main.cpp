@@ -182,7 +182,7 @@ void automatic_backgound_comparison()
         {
             std::string to_comapre = newFile;
             rect_objs = amApi.compare(base_image, to_comapre);
-
+#if defined __APPLE__
             if (rect_objs.size())
             {
                 std::string say_text("say Found ");
@@ -190,7 +190,7 @@ void automatic_backgound_comparison()
                 say_text.append(" objects.");
                 system(say_text.c_str());
             }
-
+#endif
             set_image_file(to_comapre.c_str());
 
             g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
