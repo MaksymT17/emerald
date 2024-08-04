@@ -28,9 +28,9 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/shared_mem"};
+const std::string shared_memory_name{"/shared_mem_1"};
 bool isStopRequested{false}, connectionConfirmed{false};
-std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, false, shared_memory_name);
+std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
 bool isConfChanged{false};
 
@@ -158,6 +158,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
         {
             if (isConfChanged)
             {
+                printf("CONFIG changed apply new %d\n", configuration.MinPixelsForObject);
                 MessageSetConfig msg_conf{5, MessageType::SET_CONFIG, configuration};
                 master->send(&msg_conf);
                 auto setconfig_resp = master->receive();
@@ -174,7 +175,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
 
             std::string to_comapre = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-            MessageCompareRequest msg{7, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg{5, MessageType::COMPARE_REQUEST, "", ""};
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -242,7 +243,7 @@ void automatic_backgound_comparison()
         {
             std::string to_comapre = newFile;
 
-            MessageCompareRequest msg{7, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg{5, MessageType::COMPARE_REQUEST, "", ""};
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -312,7 +313,7 @@ gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     isAutomaticActivated = false;
 
-    Message msg{1, MessageType::DISCONNECT};
+    Message msg{5, MessageType::DISCONNECT};
     master->send(&msg);
 
     Message *disconnect_res = master->receive();
@@ -336,16 +337,12 @@ int main(int argc, char *argv[])
     GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
     int width = WINDOW_WIDTH;
     int height = WINDOW_HEIGHT;
-
     gtk_init(&argc, &argv);
-
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Image and Button Example");
     gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-
     box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(window), box);
-
     g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(on_widget_deleted), NULL);
 
     pixbuf = gdk_pixbuf_new_from_file("wiki_threaded_bfs.jpg", NULL);
@@ -381,14 +378,14 @@ int main(int argc, char *argv[])
     range_min_pix = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 120.0, 1);
     gtk_scale_add_mark(GTK_SCALE(range_min_pix), 0, GTK_POS_TOP, "MinPixs");
     g_signal_connect(range_min_pix, "value-changed", G_CALLBACK(on_min_pixels_changed), NULL);
-    gtk_range_set_value(GTK_RANGE(range_time_limit), configuration.MinPixelsForObject);
+    gtk_range_set_value(GTK_RANGE(range_min_pix), configuration.MinPixelsForObject);
     gtk_box_pack_start(GTK_BOX(box), range_min_pix, FALSE, FALSE, 0);
 
     // step
     range_step = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 20.0, 2);
     gtk_scale_add_mark(GTK_SCALE(range_step), 0, GTK_POS_TOP, "Step");
     g_signal_connect(range_step, "value-changed", G_CALLBACK(on_step_changed), NULL);
-    gtk_range_set_value(GTK_RANGE(range_time_limit), configuration.PixelStep);
+    gtk_range_set_value(GTK_RANGE(range_step), configuration.PixelStep);
     gtk_box_pack_start(GTK_BOX(box), range_step, FALSE, FALSE, 0);
 
     // time limit
@@ -417,7 +414,7 @@ int main(int argc, char *argv[])
     gtk_widget_show_all(window);
     g_print("Connecting to aquamarine service. Handshake ...");
 
-    Message msg{1, MessageType::HANDSHAKE};
+    Message msg{5, MessageType::HANDSHAKE};
     master->send(&msg);
     auto handshake_resp = master->receive();
     if (handshake_resp->type == MessageType::HANDSHAKE_OK)
@@ -430,7 +427,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    MessageSetConfig msg_conf{3, MessageType::SET_CONFIG, configuration};
+    MessageSetConfig msg_conf{5, MessageType::SET_CONFIG, configuration};
     master->send(&msg_conf);
     auto setconfig_resp = master->receive();
     if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
