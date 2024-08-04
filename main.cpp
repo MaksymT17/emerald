@@ -15,6 +15,7 @@
 
 constexpr int WINDOW_WIDTH = 960;
 constexpr int WINDOW_HEIGHT = 540;
+int client_id{0};
 
 // global variables, used for static callbacks or selection file events
 std::string base_image;
@@ -28,7 +29,7 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/shared_mem_1"};
+const std::string shared_memory_name{"/shared_mem_2"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
@@ -333,6 +334,9 @@ int main(int argc, char *argv[])
 {
     GtkWidget *window;
     GtkWidget *box;
+
+    if(argc == 2)
+        client_id = std::atoi(argv[1]);
 
     GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
     int width = WINDOW_WIDTH;
