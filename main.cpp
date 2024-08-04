@@ -15,6 +15,7 @@
 
 constexpr int WINDOW_WIDTH = 960;
 constexpr int WINDOW_HEIGHT = 540;
+size_t client_id{0};
 
 // global variables, used for static callbacks or selection file events
 std::string base_image;
@@ -28,7 +29,7 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/shared_mem_1"};
+const std::string shared_memory_name{"/shared_mem_"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
@@ -158,8 +159,8 @@ static void open_dialog(GtkWidget *button, gpointer window)
         {
             if (isConfChanged)
             {
-                printf("CONFIG changed apply new %d\n", configuration.MinPixelsForObject);
-                MessageSetConfig msg_conf{5, MessageType::SET_CONFIG, configuration};
+                printf("CONFIG changed apply new %zu\n", configuration.MinPixelsForObject);
+                MessageSetConfig msg_conf{client_id, MessageType::SET_CONFIG, configuration};
                 master->send(&msg_conf);
                 auto setconfig_resp = master->receive();
                 if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
@@ -175,7 +176,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
 
             std::string to_comapre = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-            MessageCompareRequest msg{5, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg{client_id, MessageType::COMPARE_REQUEST, "", ""};
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -199,6 +200,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
             {
                 g_print("Received COMPARE_FAIL message.\n");
             }
+            
             gtk_button_set_label(GTK_BUTTON(button), "Load image");
             base_image.clear();
             gtk_widget_set_sensitive(btn_auto, false);
@@ -243,7 +245,7 @@ void automatic_backgound_comparison()
         {
             std::string to_comapre = newFile;
 
-            MessageCompareRequest msg{5, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg{client_id, MessageType::COMPARE_REQUEST, "", ""};
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -313,7 +315,7 @@ gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     isAutomaticActivated = false;
 
-    Message msg{5, MessageType::DISCONNECT};
+    Message msg{client_id, MessageType::DISCONNECT};
     master->send(&msg);
 
     Message *disconnect_res = master->receive();
@@ -333,6 +335,9 @@ int main(int argc, char *argv[])
 {
     GtkWidget *window;
     GtkWidget *box;
+
+    if(argc == 2)
+        client_id = std::atoi(argv[1]);
 
     GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
     int width = WINDOW_WIDTH;
@@ -414,7 +419,7 @@ int main(int argc, char *argv[])
     gtk_widget_show_all(window);
     g_print("Connecting to aquamarine service. Handshake ...");
 
-    Message msg{5, MessageType::HANDSHAKE};
+    Message msg{client_id, MessageType::HANDSHAKE};
     master->send(&msg);
     auto handshake_resp = master->receive();
     if (handshake_resp->type == MessageType::HANDSHAKE_OK)
@@ -427,7 +432,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    MessageSetConfig msg_conf{5, MessageType::SET_CONFIG, configuration};
+    MessageSetConfig msg_conf{client_id, MessageType::SET_CONFIG, configuration};
     master->send(&msg_conf);
     auto setconfig_resp = master->receive();
     if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
