@@ -1,5 +1,5 @@
 #pragma once
-#include <semaphore.h>
+#include <string>
 #include "Message.hpp"
 
 class SharedMemoryReceiver
@@ -8,13 +8,16 @@ public:
     SharedMemoryReceiver(const char *shMemName);
     void init();
     void finish();
-    Message * receiveMessage();
+    Message *receiveMessage();
 
 private:
+#ifndef _WIN32
     int m_shm_fd;
+#else
+    HANDLE m_shm_fd;
+#endif
+
     void *m_ptr;
-    sem_t *m_sem;
-    sem_t *m_rec_sem;
+
     std::string m_name;
-    
 };

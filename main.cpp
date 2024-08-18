@@ -29,7 +29,7 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/shared_mem_"};
+const std::string shared_memory_name{"/_shmem4"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
