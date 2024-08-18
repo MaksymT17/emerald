@@ -29,9 +29,9 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/_shmem4"};
+const std::string shared_memory_name{"/_shmem8"};
 bool isStopRequested{false}, connectionConfirmed{false};
-std::unique_ptr<ProcCommunicator> master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
+std::unique_ptr<ProcCommunicator> master;
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
 bool isConfChanged{false};
 
@@ -331,12 +331,39 @@ gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
     return TRUE;
 }
 
+std::string exec(const char* cmd) {
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != NULL)
+            result += buffer;
+    }
+    return result;
+}
+
 int main(int argc, char *argv[])
 {
+    // check if aquamarine server is running, witout it comparison not possible
+    // sync primitives are created by aquamarine, wait until it wil be running
+    size_t am_srv_retry{0};
+    while (exec("pgrep -l aquamarine").empty())
+    {
+        std::cout << "Server aquamarine is not running, retry after 5sec, attempt " << am_srv_retry++ << std::endl;
+        sleep(5);
+        if (am_srv_retry == 20)
+        {
+            std::cout << "Failed to establish connection to aquamarine." << std::endl;
+            exit(0);
+        }
+    }
+
+    master = std::make_unique<ProcCommunicator>(true, true, shared_memory_name);
     GtkWidget *window;
     GtkWidget *box;
 
-    if(argc == 2)
+    if (argc == 2)
         client_id = std::atoi(argv[1]);
 
     GtkWidget *range_min_pix, *range_step, *range_time_limit, *range_affinity_treshold, *range_threads_mult;
