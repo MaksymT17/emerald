@@ -29,7 +29,7 @@ size_t rects_count;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/_shmem8"};
+const std::string shared_memory_name{"/_shmem10"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ProcCommunicator> master;
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
@@ -171,6 +171,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 {
                     g_print("SetConfig Failed. unexpected message type:%zu. Use previous one.", setconfig_resp->type);
                 }
+                master->ackNotify();
                 isConfChanged = false;
             }
 
@@ -186,7 +187,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
             g_print("Send compare request %s %s", base_image.c_str(), to_comapre.c_str());
             master->send(&msg);
             Message *resp = master->receive();
-
+bool is_redraw_needed{false};
             if (resp->type == MessageType::COMPARE_RESULT)
             {
                 MessageCompareResult *result_msg = static_cast<MessageCompareResult *>(resp);
@@ -194,6 +195,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 // std::copy(result_msg->rects, result_msg->rects + 100, rect_objs);
                 rect_objs = static_cast<Rect *>(result_msg->payload);
                 rects_count = result_msg->payload_bytes / sizeof(Rect);
+                is_redraw_needed = true;
                 g_print("Received compare %zu.\n", rects_count);
             }
             else if (resp->type == MessageType::COMPARE_FAIL)
@@ -201,6 +203,10 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 g_print("Received COMPARE_FAIL message.\n");
             }
             
+            if(is_redraw_needed)
+                g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
+            master->ackNotify();
+
             gtk_button_set_label(GTK_BUTTON(button), "Load image");
             base_image.clear();
             gtk_widget_set_sensitive(btn_auto, false);
@@ -239,6 +245,7 @@ void automatic_backgound_comparison()
 {
     while (isAutomaticActivated)
     {
+        bool is_redraw_needed{false};
         std::string newFile;
         rects_count = 0;
         if (fileProvider->isNewFileReady(newFile))
@@ -262,6 +269,8 @@ void automatic_backgound_comparison()
                 g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", result_msg->id, result_msg->type, result_msg->payload_bytes);
                 rect_objs = static_cast<Rect *>(result_msg->payload);
                 rects_count = result_msg->payload_bytes / sizeof(Rect);
+                is_redraw_needed = true;
+                
                 g_print("Received compare %zu.\n", rects_count);
             }
             else if (resp->type == MessageType::COMPARE_FAIL)
@@ -284,7 +293,9 @@ void automatic_backgound_comparison()
 #endif
             set_image_file(to_comapre.c_str());
 
-            g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
+            if(is_redraw_needed)
+                g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
+            master->ackNotify();
 
             //  replace base frame for next iteration
             base_image = to_comapre;
@@ -323,7 +334,7 @@ gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
     {
         std::cout << "Disconnect with running aquamarine completed" << std::endl;
     }
-
+master->ackNotify();
     if (background_cmp_thread.joinable())
         background_cmp_thread.join();
 
@@ -458,7 +469,7 @@ int main(int argc, char *argv[])
         g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp->type);
         exit(1);
     }
-
+master->ackNotify();
     MessageSetConfig msg_conf{client_id, MessageType::SET_CONFIG, configuration};
     master->send(&msg_conf);
     auto setconfig_resp = master->receive();
@@ -471,7 +482,7 @@ int main(int argc, char *argv[])
         g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp->type);
         exit(1);
     }
-
+master->ackNotify();
     g_print("Ready to start comparison!");
     gtk_main();
 
