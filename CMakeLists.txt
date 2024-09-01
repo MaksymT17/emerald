@@ -15,9 +15,8 @@ pkg_check_modules(GTK REQUIRED gtk+-3.0)
 include_directories(${GTK_INCLUDE_DIRS} ${SQLite3_INCLUDE_DIRS} ${JPEG_INCLUDE_DIR} "sh_mem" ".")
 
 link_directories(${GTK_LIBRARY_DIRS})
-
-add_executable(am_gui main.cpp FileProvider.hpp sh_mem/ProcCommunicator.cpp
- sh_mem/SharedMemoryReceiver.cpp sh_mem/SharedMemorySender.cpp)
+add_subdirectory(sh_mem)
+add_executable(am_gui main.cpp FileProvider.hpp )
  
-target_link_libraries(am_gui ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+target_link_libraries(am_gui shared_mem ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
  ${SQLite3_LIBRARIES} ${JPEG_LIBRARIES})
