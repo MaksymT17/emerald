@@ -30,7 +30,7 @@ MessageCompareResult cmp_resp;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
-const std::string shared_memory_name{"/_shmem1103"};
+const std::string shared_memory_name{"/_shmem1107"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ClientProcCommunicator> master;
 AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
@@ -359,8 +359,36 @@ std::string exec(const char* cmd) {
     return result;
 }
 
+std::unique_ptr<ServerProcCommunicator> slave;
+void handleSignal(int signal)
+{
+	std::cout << "Received SIGTERM signal (" << signal << "). Cleaning up and exiting...\n";
+	master.reset();
+	
+	exit(0); // Exit the program with status code 0
+}
+
 int main(int argc, char *argv[])
 {
+
+	struct sigaction sa;
+	sa.sa_handler = handleSignal; // Set the handler function
+	sa.sa_flags = 0;			  // No special flags
+	sigemptyset(&sa.sa_mask);	  // No additional signals blocked during handler execution
+
+	// Set up handlers for SIGTERM and SIGINT
+	if (sigaction(SIGTERM, &sa, nullptr) == -1)
+	{
+		std::cerr << "Error setting up SIGTERM handler\n";
+		return 1;
+	}
+	if (sigaction(SIGINT, &sa, nullptr) == -1)
+	{
+		std::cerr << "Error setting up SIGINT handler\n";
+		return 1;
+	}
+
+
     // check if aquamarine server is running, witout it comparison not possible
     // sync primitives are created by aquamarine, wait until it wil be running
     size_t am_srv_retry{0};
