@@ -17,16 +17,10 @@ enum MessageType : size_t
     DISCONNECT,
     DISCONNECT_OK,
     DISCONNECT_FAIL,
-    UNEXPECTED_REQUEST
+    UNEXPECTED_REQUEST // default value, user must specify type of message
 };
 
-struct Message
-{
-    size_t id;
-    MessageType type;
-};
-
-struct AmConfiguration
+struct Configuration
 {
     size_t AffinityThreshold;
     size_t MinPixelsForObject;
@@ -36,13 +30,32 @@ struct AmConfiguration
     double ThreadsMultiplier;
 };
 
+struct Message
+{
+    Message(const size_t aId = 0, const MessageType aType = MessageType::UNEXPECTED_REQUEST)
+        : id(aId),
+          type(aType),
+          size(sizeof(Message)) {}
+    size_t id;
+    MessageType type;
+    size_t size;
+};
+
 struct MessageSetConfig : public Message
 {
-    AmConfiguration configuration;
+    MessageSetConfig() : Message()
+    {
+        size = sizeof(MessageSetConfig);
+    }
+    Configuration configuration;
 };
 
 struct MessageCompareRequest : public Message
 {
+    MessageCompareRequest() : Message()
+    {
+        size = sizeof(MessageCompareRequest);
+    }
     char base[200];
     char to_compare[200];
 };
@@ -54,6 +67,10 @@ struct Rect
 
 struct MessageCompareResult : public Message
 {
+    MessageCompareResult() : Message()
+    {
+        size = sizeof(MessageCompareResult);
+    }
     Rect payload[100];
     size_t payload_bytes;
 };

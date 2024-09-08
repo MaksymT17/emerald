@@ -7,6 +7,9 @@
 #include "Message.hpp"
 #ifndef _WIN32
 #include <semaphore.h>
+#include <iostream>
+#include <fcntl.h>
+#include <unistd.h> 
 #else
 #include <windows.h>
 #endif
@@ -18,7 +21,7 @@ class ProcCommunicator
 {
 protected:
     ProcCommunicator(const std::string &shMemName);
-    ~ProcCommunicator();
+    virtual ~ProcCommunicator();
 
 protected:
     std::unique_ptr<SharedMemorySender> m_sender;

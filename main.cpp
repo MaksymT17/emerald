@@ -23,9 +23,7 @@ GtkWidget *image;
 GtkWidget *button, *button2, *btn_auto;
 double aspect_ratio;
 double scale_ratio_w, scale_ratio_h;
-// am::analyze::algorithm::DescObjects rect_objs;
-//Rect *rect_objs;
-//size_t rects_count;
+
 MessageCompareResult cmp_resp;
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
@@ -33,7 +31,7 @@ GdkPixbuf *pixbuf;
 const std::string shared_memory_name{"/_shmem1107"};
 bool isStopRequested{false}, connectionConfirmed{false};
 std::unique_ptr<ClientProcCommunicator> master;
-AmConfiguration configuration{75, 10, 1, 50, 5, 10.0};
+Configuration configuration{75, 10, 1, 50, 5, 10.0};
 bool isConfChanged{false};
 
 void on_min_pixels_changed(GtkRange *range, gpointer data)
@@ -161,10 +159,13 @@ static void open_dialog(GtkWidget *button, gpointer window)
             if (isConfChanged)
             {
                 printf("CONFIG changed apply new %zu\n", configuration.MinPixelsForObject);
-                MessageSetConfig msg_conf{client_id, MessageType::SET_CONFIG, configuration};
+                MessageSetConfig msg_conf; //{client_id, MessageType::SET_CONFIG, configuration};
+                msg_conf.id = client_id;
+                msg_conf.type = MessageType::SET_CONFIG;
+                msg_conf.configuration = configuration;
                 Message setconfig_resp;
                 master->sendRequestGetResponse(&msg_conf, setconfig_resp);
-                //auto setconfig_resp = master->receive();
+                // auto setconfig_resp = master->receive();
                 /*if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
                 {
                     g_print("SetConfig OK %zu %zu.", setconfig_resp->id, setconfig_resp->type);
@@ -173,13 +174,15 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 {
                     g_print("SetConfig Failed. unexpected message type:%zu. Use previous one.", setconfig_resp->type);
                 }*/
-                //master->ackNotify();
+                // master->ackNotify();
                 isConfChanged = false;
             }
 
             std::string to_comapre = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
-            MessageCompareRequest msg{client_id, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg;
+            msg.id = client_id;
+            msg.type = MessageType::COMPARE_REQUEST;
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -187,27 +190,24 @@ static void open_dialog(GtkWidget *button, gpointer window)
             msg.to_compare[sizeof(msg.to_compare) - 1] = '\0'; // Ensure null-termination
 
             g_print("Send compare request %s %s", base_image.c_str(), to_comapre.c_str());
-            
-           // MessageCompareResult cmp_resp;// = master->receive();
+
             master->sendRequestGetResponse(&msg, cmp_resp);
 
             if (cmp_resp.type == MessageType::COMPARE_RESULT)
             {
-                //MessageCompareResult *result_msg = static_cast<MessageCompareResult *>(resp);
+                // MessageCompareResult *result_msg = static_cast<MessageCompareResult *>(resp);
                 g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp.id, cmp_resp.type, cmp_resp.payload_bytes);
                 // std::copy(result_msg->rects, result_msg->rects + 100, rect_objs);
-                //rect_objs = cmp_resp.payload;
-                //rects_count = cmp_resp.payload_bytes / sizeof(Rect);
+                // rect_objs = cmp_resp.payload;
+                // rects_count = cmp_resp.payload_bytes / sizeof(Rect);
                 g_print("Received compare %zu.\n", cmp_resp.payload_bytes / sizeof(Rect));
             }
             else if (cmp_resp.type == MessageType::COMPARE_FAIL)
             {
                 g_print("Received COMPARE_FAIL message.\n");
             }
-            
-            //if(is_redraw_needed)
-                g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
-            //master->ackNotify();
+
+            g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
 
             gtk_button_set_label(GTK_BUTTON(button), "Load image");
             base_image.clear();
@@ -222,9 +222,9 @@ void draw_rectangle(GtkWidget *widget, cairo_t *cr)
     for (size_t i = 0; i < cmp_resp.payload_bytes / sizeof(Rect); i++)
     {
         const auto &rect = cmp_resp.payload[i];
-        //if(i==0){
-        //g_print("draw_rectangle [%zu] %zu %zu %zu %zu\n", i, rect.l, rect.r, rect.b, rect.t);
-       // return;
+        // if(i==0){
+        // g_print("draw_rectangle [%zu] %zu %zu %zu %zu\n", i, rect.l, rect.r, rect.b, rect.t);
+        // return;
         //}
         cairo_set_source_rgb(cr, 0.69, 0.19, 0);
         cairo_set_line_width(cr, 1.0);
@@ -252,12 +252,14 @@ void automatic_backgound_comparison()
     {
         bool is_redraw_needed{false};
         std::string newFile;
-        //rects_count = 0;
+
         if (fileProvider->isNewFileReady(newFile))
         {
             std::string to_comapre = newFile;
 
-            MessageCompareRequest msg{client_id, MessageType::COMPARE_REQUEST, "", ""};
+            MessageCompareRequest msg;
+            msg.id = client_id;
+            msg.type = MessageType::COMPARE_REQUEST;
             std::strncpy(msg.base, base_image.c_str(), sizeof(msg.base) - 1);
             msg.base[sizeof(msg.base) - 1] = '\0'; // Ensure null-termination
 
@@ -265,16 +267,15 @@ void automatic_backgound_comparison()
             msg.to_compare[sizeof(msg.to_compare) - 1] = '\0'; // Ensure null-termination
 
             g_print("Send compare request %s %s", base_image.c_str(), to_comapre.c_str());
-            //MessageCompareResult resp;
             master->sendRequestGetResponse(&msg, cmp_resp);
 
             if (cmp_resp.type == MessageType::COMPARE_RESULT)
             {
                 g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp.id, cmp_resp.type, cmp_resp.payload_bytes);
-                //rect_objs = static_cast<Rect *>(resp.payload);
-                //rects_count = resp.payload_bytes / sizeof(Rect);
+                // rect_objs = static_cast<Rect *>(resp.payload);
+                // rects_count = resp.payload_bytes / sizeof(Rect);
                 is_redraw_needed = true;
-                
+
                 g_print("Received compare %zu.\n", cmp_resp.payload_bytes / sizeof(Rect));
             }
             else if (cmp_resp.type == MessageType::COMPARE_FAIL)
@@ -297,9 +298,9 @@ void automatic_backgound_comparison()
 #endif
             set_image_file(to_comapre.c_str());
 
-            //if(is_redraw_needed)
-                g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
-            //master->ackNotify();
+            // if(is_redraw_needed)
+            g_idle_add((GSourceFunc)gtk_widget_queue_draw, image);
+            // master->ackNotify();
 
             //  replace base frame for next iteration
             base_image = to_comapre;
@@ -329,17 +330,8 @@ gboolean automatic_search(gpointer data)
 gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     isAutomaticActivated = false;
+    master.reset();
 
-    Message msg{client_id, MessageType::DISCONNECT};
-    Message disconnect_res;
-    master->sendRequestGetResponse(&msg, disconnect_res);
-
-    //Message *disconnect_res = master->receive();
-    if (disconnect_res.type == MessageType::DISCONNECT_OK)
-    {
-        std::cout << "Disconnect with running aquamarine completed" << std::endl;
-    }
-//master->ackNotify();
     if (background_cmp_thread.joinable())
         background_cmp_thread.join();
 
@@ -347,12 +339,15 @@ gboolean on_widget_deleted(GtkWidget *widget, GdkEvent *event, gpointer data)
     return TRUE;
 }
 
-std::string exec(const char* cmd) {
+std::string exec(const char *cmd)
+{
     std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) return "ERROR";
+    if (!pipe)
+        return "ERROR";
     char buffer[128];
     std::string result = "";
-    while (!feof(pipe.get())) {
+    while (!feof(pipe.get()))
+    {
         if (fgets(buffer, 128, pipe.get()) != NULL)
             result += buffer;
     }
@@ -362,32 +357,30 @@ std::string exec(const char* cmd) {
 std::unique_ptr<ServerProcCommunicator> slave;
 void handleSignal(int signal)
 {
-	std::cout << "Received SIGTERM signal (" << signal << "). Cleaning up and exiting...\n";
-	master.reset();
-	
-	exit(0); // Exit the program with status code 0
+    std::cout << "Received SIGTERM signal (" << signal << "). Cleaning up and exiting...\n";
+    master.reset();
+
+    exit(0); // Exit the program with status code 0
 }
 
 int main(int argc, char *argv[])
 {
+    struct sigaction sa;
+    sa.sa_handler = handleSignal; // Set the handler function
+    sa.sa_flags = 0;              // No special flags
+    sigemptyset(&sa.sa_mask);     // No additional signals blocked during handler execution
 
-	struct sigaction sa;
-	sa.sa_handler = handleSignal; // Set the handler function
-	sa.sa_flags = 0;			  // No special flags
-	sigemptyset(&sa.sa_mask);	  // No additional signals blocked during handler execution
-
-	// Set up handlers for SIGTERM and SIGINT
-	if (sigaction(SIGTERM, &sa, nullptr) == -1)
-	{
-		std::cerr << "Error setting up SIGTERM handler\n";
-		return 1;
-	}
-	if (sigaction(SIGINT, &sa, nullptr) == -1)
-	{
-		std::cerr << "Error setting up SIGINT handler\n";
-		return 1;
-	}
-
+    // Set up handlers for SIGTERM and SIGINT
+    if (sigaction(SIGTERM, &sa, nullptr) == -1)
+    {
+        std::cerr << "Error setting up SIGTERM handler\n";
+        return 1;
+    }
+    if (sigaction(SIGINT, &sa, nullptr) == -1)
+    {
+        std::cerr << "Error setting up SIGINT handler\n";
+        return 1;
+    }
 
     // check if aquamarine server is running, witout it comparison not possible
     // sync primitives are created by aquamarine, wait until it wil be running
@@ -403,7 +396,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    master = std::make_unique<ClientProcCommunicator>( shared_memory_name);
+    master = std::make_unique<ClientProcCommunicator>(shared_memory_name);
     GtkWidget *window;
     GtkWidget *box;
 
@@ -493,7 +486,6 @@ int main(int argc, char *argv[])
     Message msg{client_id, MessageType::HANDSHAKE};
     Message handshake_resp;
     master->sendRequestGetResponse(&msg, handshake_resp);
-    //auto handshake_resp = master->receive();
     if (handshake_resp.type == MessageType::HANDSHAKE_OK)
     {
         g_print("Connected to aquamarine service. Handshake complete %zu.", handshake_resp.id);
@@ -503,11 +495,12 @@ int main(int argc, char *argv[])
         g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp.type);
         exit(1);
     }
-//master->ackNotify();
-    MessageSetConfig msg_conf{client_id, MessageType::SET_CONFIG, configuration};
-    //master->send(&msg_conf);
+    MessageSetConfig msg_conf;
+    msg_conf.id = client_id;
+    msg_conf.type = MessageType::SET_CONFIG;
+    msg_conf.configuration = configuration;
 
-    Message setconfig_resp;// = master->receive();
+    Message setconfig_resp; // = master->receive();
     master->sendRequestGetResponse(&msg_conf, setconfig_resp);
     if (setconfig_resp.type == MessageType::SET_CONFIG_OK)
     {
@@ -518,7 +511,6 @@ int main(int argc, char *argv[])
         g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp.type);
         exit(1);
     }
-//master->ackNotify();
     g_print("Ready to start comparison!");
     gtk_main();
 

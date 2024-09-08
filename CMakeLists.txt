@@ -18,5 +18,5 @@ link_directories(${GTK_LIBRARY_DIRS})
 add_subdirectory(sh_mem)
 add_executable(am_gui main.cpp FileProvider.hpp )
  
-target_link_libraries(am_gui shared_mem ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+target_link_libraries(am_gui silber-1.0 ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
  ${SQLite3_LIBRARIES} ${JPEG_LIBRARIES})

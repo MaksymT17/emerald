@@ -22,11 +22,11 @@ ClientProcCommunicator::ClientProcCommunicator(
 #else
     std::wstring wshMemName(shMemName.begin(), shMemName.end());
 
-    m_master_received = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_m_rsem").c_str()));
-    m_slave_received = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_s_rsem").c_str()));
+    m_master_received = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_m_rsem").c_str());
+    m_slave_received = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_s_rsem").c_str());
     m_master_sent = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_m_sent").c_str());
-    m_slave_sent = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_s_sent").c_str()));
-    m_slave_ready = CreateSemaphoreW(NULL, SEMAPHORE_ENABLED, MAXLONG, (wshMemName + L"_s_ready").c_str()));
+    m_slave_sent = CreateSemaphoreW(NULL, SEMAPHORE_DISABLED, MAXLONG, (wshMemName + L"_s_sent").c_str());
+    m_slave_ready = CreateSemaphoreW(NULL, SEMAPHORE_ENABLED, MAXLONG, (wshMemName + L"_s_ready").c_str());
 
     if (m_master_received == NULL || m_slave_received == NULL ||
         m_master_sent == NULL || m_slave_sent == NULL || m_slave_ready == NULL)
@@ -36,4 +36,3 @@ ClientProcCommunicator::ClientProcCommunicator(
     }
 #endif
 }
-
