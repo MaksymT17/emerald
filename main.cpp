@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "FileProvider.hpp"
-#include "sh_mem/ClientProcCommunicator.h"
+#include "ClientProcCommunicator.h"
 
 // as alternative of cmake compilation:
 // example of g++ cmd:
@@ -15,7 +15,7 @@
 
 constexpr int WINDOW_WIDTH = 960;
 constexpr int WINDOW_HEIGHT = 540;
-size_t client_id{0};
+size_t client_id{1};
 
 // global variables, used for static callbacks or selection file events
 std::string base_image;
@@ -24,7 +24,7 @@ GtkWidget *button, *button2, *btn_auto;
 double aspect_ratio;
 double scale_ratio_w, scale_ratio_h;
 
-MessageCompareResult cmp_resp;
+MessageCompareResult* cmp_resp{nullptr};
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
@@ -163,8 +163,8 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 msg_conf.id = client_id;
                 msg_conf.type = MessageType::SET_CONFIG;
                 msg_conf.configuration = configuration;
-                Message setconfig_resp;
-                master->sendRequestGetResponse(&msg_conf, setconfig_resp);
+                Message* setconfig_resp;
+                master->sendRequestGetResponse(&msg_conf, &setconfig_resp);
                 // auto setconfig_resp = master->receive();
                 /*if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
                 {
@@ -191,18 +191,18 @@ static void open_dialog(GtkWidget *button, gpointer window)
 
             g_print("Send compare request %s %s", base_image.c_str(), to_comapre.c_str());
 
-            master->sendRequestGetResponse(&msg, cmp_resp);
+            master->sendRequestGetResponse(&msg, &cmp_resp);
 
-            if (cmp_resp.type == MessageType::COMPARE_RESULT)
+            if (cmp_resp->type == MessageType::COMPARE_RESULT)
             {
                 // MessageCompareResult *result_msg = static_cast<MessageCompareResult *>(resp);
-                g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp.id, cmp_resp.type, cmp_resp.payload_bytes);
+                g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp->id, cmp_resp->type, cmp_resp->payload_bytes);
                 // std::copy(result_msg->rects, result_msg->rects + 100, rect_objs);
                 // rect_objs = cmp_resp.payload;
                 // rects_count = cmp_resp.payload_bytes / sizeof(Rect);
-                g_print("Received compare %zu.\n", cmp_resp.payload_bytes / sizeof(Rect));
+                g_print("Received compare %zu.\n", cmp_resp->payload_bytes / sizeof(Rect));
             }
-            else if (cmp_resp.type == MessageType::COMPARE_FAIL)
+            else if (cmp_resp->type == MessageType::COMPARE_FAIL)
             {
                 g_print("Received COMPARE_FAIL message.\n");
             }
@@ -219,9 +219,11 @@ static void open_dialog(GtkWidget *button, gpointer window)
 
 void draw_rectangle(GtkWidget *widget, cairo_t *cr)
 {
-    for (size_t i = 0; i < cmp_resp.payload_bytes / sizeof(Rect); i++)
+    if(cmp_resp == nullptr)
+        return;
+    for (size_t i = 0; i < cmp_resp->payload_bytes / sizeof(Rect); i++)
     {
-        const auto &rect = cmp_resp.payload[i];
+        const auto &rect = cmp_resp->payload[i];
         // if(i==0){
         // g_print("draw_rectangle [%zu] %zu %zu %zu %zu\n", i, rect.l, rect.r, rect.b, rect.t);
         // return;
@@ -267,31 +269,31 @@ void automatic_backgound_comparison()
             msg.to_compare[sizeof(msg.to_compare) - 1] = '\0'; // Ensure null-termination
 
             g_print("Send compare request %s %s", base_image.c_str(), to_comapre.c_str());
-            master->sendRequestGetResponse(&msg, cmp_resp);
+            master->sendRequestGetResponse(&msg, &cmp_resp);
 
-            if (cmp_resp.type == MessageType::COMPARE_RESULT)
+            if (cmp_resp->type == MessageType::COMPARE_RESULT)
             {
-                g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp.id, cmp_resp.type, cmp_resp.payload_bytes);
+                g_print("Received compare result msg_id:%zu type:%zu bytes:%zu.\n", cmp_resp->id, cmp_resp->type, cmp_resp->payload_bytes);
                 // rect_objs = static_cast<Rect *>(resp.payload);
                 // rects_count = resp.payload_bytes / sizeof(Rect);
                 is_redraw_needed = true;
 
-                g_print("Received compare %zu.\n", cmp_resp.payload_bytes / sizeof(Rect));
+                g_print("Received compare %zu.\n", cmp_resp->payload_bytes / sizeof(Rect));
             }
-            else if (cmp_resp.type == MessageType::COMPARE_FAIL)
+            else if (cmp_resp->type == MessageType::COMPARE_FAIL)
             {
                 g_print("Received COMPARE_FAIL message.\n");
             }
             else
             {
-                g_print("Compare Failed. unexpected message type:%zu.", cmp_resp.type);
+                g_print("Compare Failed. unexpected message type:%zu.", cmp_resp->type);
             }
 
 #if defined __APPLE__
-            if (cmp_resp.payload_bytes / sizeof(Rect))
+            if (cmp_resp->payload_bytes / sizeof(Rect))
             {
                 std::string say_text("say Found ");
-                say_text.append(std::to_string(cmp_resp.payload_bytes / sizeof(Rect)));
+                say_text.append(std::to_string(cmp_resp->payload_bytes / sizeof(Rect)));
                 say_text.append(" objects.");
                 system(say_text.c_str());
             }
@@ -484,15 +486,15 @@ int main(int argc, char *argv[])
     g_print("Connecting to aquamarine service. Handshake ...");
 
     Message msg{client_id, MessageType::HANDSHAKE};
-    Message handshake_resp;
-    master->sendRequestGetResponse(&msg, handshake_resp);
-    if (handshake_resp.type == MessageType::HANDSHAKE_OK)
+    Message* handshake_resp;
+    master->sendRequestGetResponse(&msg, &handshake_resp);
+    if (handshake_resp->type == MessageType::HANDSHAKE_OK)
     {
-        g_print("Connected to aquamarine service. Handshake complete %zu.", handshake_resp.id);
+        g_print("Connected to aquamarine service. Handshake complete %zu.", handshake_resp->id);
     }
     else
     {
-        g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp.type);
+        g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp->type);
         exit(1);
     }
     MessageSetConfig msg_conf;
@@ -500,15 +502,17 @@ int main(int argc, char *argv[])
     msg_conf.type = MessageType::SET_CONFIG;
     msg_conf.configuration = configuration;
 
-    Message setconfig_resp; // = master->receive();
-    master->sendRequestGetResponse(&msg_conf, setconfig_resp);
-    if (setconfig_resp.type == MessageType::SET_CONFIG_OK)
+    Message* setconfig_resp; // = master->receive();
+    g_print("SET_CONFIG");
+    master->sendRequestGetResponse(&msg_conf, &setconfig_resp);
+    g_print("SET_CONFIG_OK ");
+    if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
     {
-        g_print(" SetConfig OK %zu %zu.", setconfig_resp.id, setconfig_resp.type);
+        g_print(" SetConfig OK %zu %zu.", setconfig_resp->id, setconfig_resp->type);
     }
     else
     {
-        g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp.type);
+        g_print("Unexpected msg from aquamarine service. Type:%zu.", handshake_resp->type);
         exit(1);
     }
     g_print("Ready to start comparison!");
