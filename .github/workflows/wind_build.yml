@@ -15,18 +15,7 @@ jobs:
     - name: Install pkg-config
       run: |
         choco install pkgconfiglite
-
-    - name: Set up vcpkg
-      run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        cd vcpkg
-        git checkout 2023.05
-        .\bootstrap-vcpkg.bat
-
-    - name: Install GTK+ 3.0
-      run: |
-        .\vcpkg\vcpkg integrate install
-        .\vcpkg\vcpkg install gtk3:x64-windows
+        choco install gtk-runtime
 
     - name: Checkout emerald repo
       uses: actions/checkout@v3
