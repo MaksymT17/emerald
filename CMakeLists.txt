@@ -8,7 +8,7 @@ set(SOURCE_FILES main.cpp)
 find_package (Threads)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK REQUIRED gtk+-3.0)
+pkg_check_modules(GTK3 REQUIRED gtk3)
 
 include_directories(${GTK_INCLUDE_DIRS} ".")
 
@@ -51,5 +51,4 @@ link_directories(${GTK_LIBRARY_DIRS})
 #add_subdirectory(sh_mem)
 add_executable(am_gui main.cpp FileProvider.hpp )
  
-target_link_libraries(am_gui silber-1.1 ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
- ${SQLite3_LIBRARIES} ${JPEG_LIBRARIES})
+target_link_libraries(am_gui silber-1.1 ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
