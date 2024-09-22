@@ -6,13 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCE_FILES main.cpp)
 
 find_package (Threads)
-find_package (SQLite3)
-find_package(JPEG REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk+-3.0)
 
-include_directories(${GTK_INCLUDE_DIRS} ${SQLite3_INCLUDE_DIRS} ${JPEG_INCLUDE_DIR} "sh_mem" ".")
+include_directories(${GTK_INCLUDE_DIRS} ".")
 
 # Unpack the archive based on the platform
 if(UNIX AND NOT APPLE)
