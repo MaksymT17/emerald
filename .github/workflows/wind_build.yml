@@ -1,8 +1,8 @@
 name: Build Windows
 
 on:
-    pull_request:
-        branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -11,6 +11,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Install pkg-config
+      run: |
+        choco install pkgconfiglite
 
     - name: Set up vcpkg
       run: |
@@ -22,7 +26,7 @@ jobs:
     - name: Install GTK+ 3.0
       run: |
         .\vcpkg\vcpkg integrate install
-        .\vcpkg\vcpkg install gtk:x64-windows
+        .\vcpkg\vcpkg install gtk3:x64-windows
 
     - name: Checkout emerald repo
       uses: actions/checkout@v3
@@ -31,7 +35,7 @@ jobs:
         ref: ${{ github.head_ref }}
         path: emerald
 
-    - name: Build artifacts with Cmake
+    - name: Build artifacts with CMake
       run: |
         cd emerald &&
         echo "removing existing build folder..."
@@ -39,6 +43,6 @@ jobs:
         echo "preparing new build with cmake..." &&
         cd build/ &&
         cmake .. &&
-        make &&
+        cmake --build . &&
         echo "Build complete!"
       shell: bash
