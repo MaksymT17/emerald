@@ -28,7 +28,7 @@ elseif(APPLE)
     execute_process(COMMAND unzip ${LIB_PATH} -d ${CMAKE_BINARY_DIR})
 else()
     message(ERROR "Application has been tested on MacOS and Linux(briefly)")
-
+    message(ERROR "You can install(modify on your own) silber library and link to the project")
 endif()
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/silber/lib")
@@ -41,7 +41,7 @@ link_directories("${CMAKE_CURRENT_SOURCE_DIR}/silber/lib")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/silber/include")
 
 link_directories(${GTK3_LIBRARY_DIRS})
-#add_subdirectory(sh_mem)
-add_executable(am_gui main.cpp FileProvider.hpp )
+
+add_executable(emerald main.cpp FileProvider.hpp )
 include_directories(${GTK3_INCLUDE_DIRS} )
-target_link_libraries(am_gui silber-1.1 ${GTK3_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(emerald silber-1.1 ${GTK3_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
