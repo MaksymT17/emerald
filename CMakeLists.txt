@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(am_gui CXX)
+project(emerald CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -27,7 +27,8 @@ elseif(APPLE)
     file(DOWNLOAD ${LIB_URL} ${LIB_PATH})
     execute_process(COMMAND unzip ${LIB_PATH} -d ${CMAKE_BINARY_DIR})
 else()
-#print unsupported OS
+    message(ERROR "Application has been tested on MacOS and Linux(briefly)")
+
 endif()
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/silber/lib")

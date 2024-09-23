@@ -11,7 +11,6 @@
 #include "FileProvider.hpp"
 #include "ClientProcCommunicator.h"
 
-
 // as alternative of cmake compilation:
 // example of g++ cmd:
 // g++ main.cpp -std=c++14 -o gtk_am_sample `pkg-config gtk+-3.0 --cflags pkg-config gtk+-3.0 --libs` -I aquamarine aquamarine/build/libaquamarine_lib.a && ./gtk_am_sample
