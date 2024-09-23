@@ -1,0 +1,44 @@
+name: MacOS build (Homebrew)
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        brew install git gcc cmake gtk+3
+
+    - name: Checkout emerald repo
+      uses: actions/checkout@v3
+      with:
+        repository: MaksymT17/emerald
+        ref: ${{ github.head_ref }}
+        path: emerald
+
+    - name: Build artifacts with Cmake
+      run: |
+        cd emerald &&
+        ./build.sh
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: emerald_build_macos
+        path: emerald/build 
