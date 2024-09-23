@@ -3,6 +3,9 @@ name: Build Windows
 on:
   pull_request:
     branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
