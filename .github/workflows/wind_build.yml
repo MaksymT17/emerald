@@ -12,21 +12,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install pkg-config
+    - name: Install Git for Windows
       run: |
-        choco install pkgconfiglite
+        choco install git
 
-    - name: Set up vcpkg
+    - name: Install MSYS2
       run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        cd vcpkg
-        git checkout 2023.05
-        .\bootstrap-vcpkg.bat
+        choco install msys2
 
-    - name: Install GTK+ 3.0
+    - name: Update MSYS2 and install packages
       run: |
-        .\vcpkg\vcpkg integrate install
-        .\vcpkg\vcpkg install gtk3:x64-windows
+        call C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
+        call C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3"
 
     - name: Checkout emerald repo
       uses: actions/checkout@v3
