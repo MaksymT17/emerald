@@ -1,0 +1,52 @@
+name: Build Windows
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Git for Windows
+      run: |
+        choco install git
+
+    - name: Install pkg-config
+      run: |
+        choco install pkgconfiglite
+
+    - name: Install MSYS2
+      run: |
+        choco install msys2
+
+    - name: Update MSYS2 and install packages
+      run: |
+        C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
+        C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3"
+  
+    - name: Checkout emerald repo
+      uses: actions/checkout@v3
+      with:
+        repository: MaksymT17/emerald
+        ref: ${{ github.head_ref }}
+        path: emerald
+
+    - name: Build artifacts with CMake
+      run: |
+        cd emerald &&
+        echo "removing existing build folder..."
+        mkdir build &&
+        echo "preparing new build with cmake..." &&
+        cd build/ &&
+        cmake .. &&
+        cmake --build . &&
+        echo "Build complete!"
+      shell: bash
