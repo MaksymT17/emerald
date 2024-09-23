@@ -5,9 +5,12 @@
 #include <glib.h>
 #include <cstdlib>
 #include <iostream>
+#include <algorithm>
+#include <cstring>
 
 #include "FileProvider.hpp"
 #include "ClientProcCommunicator.h"
+
 
 // as alternative of cmake compilation:
 // example of g++ cmd:
