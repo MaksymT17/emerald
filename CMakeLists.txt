@@ -8,7 +8,7 @@ set(SOURCE_FILES main.cpp)
 find_package (Threads)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK3 REQUIRED gtk3)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
 include_directories(${GTK_INCLUDE_DIRS} ".")
 
@@ -50,5 +50,5 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/silber/include")
 link_directories(${GTK_LIBRARY_DIRS})
 #add_subdirectory(sh_mem)
 add_executable(am_gui main.cpp FileProvider.hpp )
- 
+include_directories(${GTK_INCLUDE_DIRS} )
 target_link_libraries(am_gui silber-1.1 ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

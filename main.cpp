@@ -24,7 +24,7 @@ GtkWidget *button, *button2, *btn_auto;
 double aspect_ratio;
 double scale_ratio_w, scale_ratio_h;
 
-MessageCompareResult* cmp_resp{nullptr};
+MessageCompareResult *cmp_resp{nullptr};
 double width_o, height_o, width, height;
 GdkPixbuf *pixbuf;
 
@@ -163,7 +163,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
                 msg_conf.id = client_id;
                 msg_conf.type = MessageType::SET_CONFIG;
                 msg_conf.configuration = configuration;
-                Message* setconfig_resp;
+                Message *setconfig_resp;
                 master->sendRequestGetResponse(&msg_conf, &setconfig_resp);
                 // auto setconfig_resp = master->receive();
                 /*if (setconfig_resp->type == MessageType::SET_CONFIG_OK)
@@ -219,7 +219,7 @@ static void open_dialog(GtkWidget *button, gpointer window)
 
 void draw_rectangle(GtkWidget *widget, cairo_t *cr)
 {
-    if(cmp_resp == nullptr)
+    if (cmp_resp == nullptr)
         return;
     for (size_t i = 0; i < cmp_resp->payload_bytes / sizeof(Rect); i++)
     {
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
 
     master = std::make_unique<ClientProcCommunicator>(shared_memory_name);
     GtkWidget *window;
-    GtkWidget *box;
+    GtkWidget *left_box, *control_box;
 
     if (argc == 2)
         client_id = std::atoi(argv[1]);
@@ -410,10 +410,14 @@ int main(int argc, char *argv[])
     int height = WINDOW_HEIGHT;
     gtk_init(&argc, &argv);
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Image and Button Example");
+    gtk_window_set_title(GTK_WINDOW(window), "Image comparison GTK3 application");
     gtk_container_set_border_width(GTK_CONTAINER(window), 0);
-    box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), box);
+    // Create the main horizontal box
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+
+    // Create the left box for the image
+    left_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(window), main_box);
     g_signal_connect(G_OBJECT(window), "delete-event", G_CALLBACK(on_widget_deleted), NULL);
 
     pixbuf = gdk_pixbuf_new_from_file("wiki_threaded_bfs.jpg", NULL);
@@ -434,59 +438,73 @@ int main(int argc, char *argv[])
 
     image = gtk_image_new_from_pixbuf(pixbuf);
     g_signal_connect_after(image, "draw", G_CALLBACK(draw_rectangle), NULL);
-    gtk_box_pack_start(GTK_BOX(box), image, FALSE, FALSE, 0);
-
+    gtk_box_pack_start(GTK_BOX(left_box), image, FALSE, TRUE, 0);
+    // Create the control box for buttons and scales
+    control_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_size_request(control_box, 200, -1);
     button = gtk_button_new_with_label("Load Base Image!");
     g_signal_connect(button, "clicked", G_CALLBACK(open_dialog), (gpointer)image);
-    gtk_box_pack_start(GTK_BOX(box), button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), button, FALSE, FALSE, 0);
 
     btn_auto = gtk_button_new_with_label("Automatic");
     g_signal_connect(btn_auto, "clicked", G_CALLBACK(automatic_search), NULL);
-    gtk_box_pack_start(GTK_BOX(box), btn_auto, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), btn_auto, FALSE, FALSE, 0);
     gtk_widget_set_sensitive(btn_auto, false);
 
     // min pixs in object
-    range_min_pix = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 120.0, 1);
+    range_min_pix = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1.0, 120.0, 1);
     gtk_scale_add_mark(GTK_SCALE(range_min_pix), 0, GTK_POS_TOP, "MinPixs");
     g_signal_connect(range_min_pix, "value-changed", G_CALLBACK(on_min_pixels_changed), NULL);
     gtk_range_set_value(GTK_RANGE(range_min_pix), configuration.MinPixelsForObject);
-    gtk_box_pack_start(GTK_BOX(box), range_min_pix, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), range_min_pix, FALSE, FALSE, 0);
 
     // step
-    range_step = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 20.0, 2);
+    range_step = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1.0, 20.0, 2);
     gtk_scale_add_mark(GTK_SCALE(range_step), 0, GTK_POS_TOP, "Step");
     g_signal_connect(range_step, "value-changed", G_CALLBACK(on_step_changed), NULL);
     gtk_range_set_value(GTK_RANGE(range_step), configuration.PixelStep);
-    gtk_box_pack_start(GTK_BOX(box), range_step, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), range_step, FALSE, FALSE, 0);
 
     // time limit
-    range_time_limit = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 0.5);
+    range_time_limit = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0.1, 60.0, 0.5);
     gtk_scale_add_mark(GTK_SCALE(range_time_limit), 0, GTK_POS_TOP, "TimeLim");
     g_signal_connect(range_time_limit, "value-changed", G_CALLBACK(on_time_limit_changed), NULL);
     gtk_range_set_value(GTK_RANGE(range_time_limit), configuration.CalculationTimeLimit);
-    gtk_box_pack_start(GTK_BOX(box), range_time_limit, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), range_time_limit, FALSE, FALSE, 0);
 
     // affinity treshold
-    range_affinity_treshold = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 1.0, 764, 1);
+    range_affinity_treshold = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 1.0, 764, 1);
     gtk_scale_add_mark(GTK_SCALE(range_affinity_treshold), 0, GTK_POS_TOP, "Aff");
     g_signal_connect(range_affinity_treshold, "value-changed", G_CALLBACK(on_affinity_changed), NULL);
     gtk_range_set_value(GTK_RANGE(range_affinity_treshold), configuration.AffinityThreshold);
-    gtk_box_pack_start(GTK_BOX(box), range_affinity_treshold, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), range_affinity_treshold, FALSE, FALSE, 0);
 
     // threads multiplier
-    range_threads_mult = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.1, 60.0, 2);
+    range_threads_mult = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0.1, 60.0, 2);
     gtk_scale_add_mark(GTK_SCALE(range_threads_mult), 0, GTK_POS_TOP, "ThrMult");
     g_signal_connect(range_threads_mult, "value-changed", G_CALLBACK(on_threads_mult_changed), NULL);
     gtk_range_set_value(GTK_RANGE(range_threads_mult), configuration.ThreadsMultiplier);
-    gtk_box_pack_start(GTK_BOX(box), range_threads_mult, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(control_box), range_threads_mult, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Create an alignment widget
+    GtkWidget *alignment = gtk_alignment_new(0.0, 0.0, 1.0, 0.0); // Align left, top
+
+    // Pack the image into the alignment
+    gtk_container_add(GTK_CONTAINER(alignment), image);
+
+    gtk_box_pack_start(GTK_BOX(main_box), left_box, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(main_box), control_box, FALSE, FALSE, 0);
+
+    // Finally, add the main_box to your window
+    gtk_container_add(GTK_CONTAINER(window), main_box);
 
     gtk_widget_show_all(window);
     g_print("Connecting to aquamarine service. Handshake ...");
 
     Message msg{client_id, MessageType::HANDSHAKE};
-    Message* handshake_resp;
+    Message *handshake_resp;
     master->sendRequestGetResponse(&msg, &handshake_resp);
     if (handshake_resp->type == MessageType::HANDSHAKE_OK)
     {
@@ -502,7 +520,7 @@ int main(int argc, char *argv[])
     msg_conf.type = MessageType::SET_CONFIG;
     msg_conf.configuration = configuration;
 
-    Message* setconfig_resp; // = master->receive();
+    Message *setconfig_resp; // = master->receive();
     g_print("SET_CONFIG");
     master->sendRequestGetResponse(&msg_conf, &setconfig_resp);
     g_print("SET_CONFIG_OK ");
