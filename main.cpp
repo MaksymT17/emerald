@@ -300,6 +300,12 @@ void automatic_backgound_comparison()
                 system(say_text.c_str());
             }
 #endif
+#ifndef _WIN32
+            if (cmp_resp->payload_bytes / sizeof(Rect))
+            {
+                system("aplay sonar_2w.mp3");
+            }
+#endif
             set_image_file(to_comapre.c_str());
 
             // if(is_redraw_needed)
