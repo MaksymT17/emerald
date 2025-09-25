@@ -15,11 +15,22 @@ public:
     int
     getNumberFromStr(const std::string &filename)
     {
+        if (filename.find('i') != std::string::npos) {
+            return 0;
+        }
         std::string v;
         std::copy_if(filename.begin(), filename.end(), std::back_inserter(v), ::isdigit);
         if (v.empty())
             return 0;
-        return std::stoi(v);
+        try {
+            return std::stoi(v);  // Attempt to convert to integer
+        } catch (const std::invalid_argument &e) {
+            std::cerr << "File number conversion error: invalid argument - " << e.what() << '\n';
+            return 0;
+        } catch (const std::out_of_range &e) {
+            std::cerr << "File number conversion error: out of range - " << e.what() << '\n';
+            return 0;
+        }
     }
 
     bool isNewFileReady(std::string &outNewFileName)
