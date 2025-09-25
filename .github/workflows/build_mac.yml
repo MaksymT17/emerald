@@ -19,14 +19,14 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
         brew install git gcc cmake gtk+3
 
     - name: Checkout emerald repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: MaksymT17/emerald
         ref: ${{ github.head_ref }}
@@ -38,7 +38,7 @@ jobs:
         ./build.sh
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: emerald_build_macos
         path: emerald/build 
