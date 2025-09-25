@@ -15,9 +15,10 @@ public:
     int
     getNumberFromStr(const std::string &filename)
     {
-        if (filename.find('i') != std::string::npos) {
-            return 0;
-        }
+        // in case of filterring inputs, use some patter in file name to be skipped, e.g. already analyzed 
+        //if (filename.find('i') != std::string::npos) {
+        //    return 0;
+        //}
         std::string v;
         std::copy_if(filename.begin(), filename.end(), std::back_inserter(v), ::isdigit);
         if (v.empty())
