@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fancy IPC Dashboard Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      width: 100%;
+      background-color: #1e90ff;
+      color: white;
+      padding: 20px 0;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    main {
+      margin-top: 20px;
+      width: 90%;
+      max-width: 800px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    form > div {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #1e90ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 5px;
+    }
+    button:hover {
+      background-color: #187bcd;
+    }
+    #response {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      min-height: 50px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Fancy IPC Dashboard Form</h1>
+  </header>
+  <main>
+    <form id="fancyForm">
+
+      <!-- Text input -->
+      <div>
+        <label for="textInput">Text Input:</label>
+        <input type="text" id="textInput" value="Default text">
+      </div>
+
+      <!-- Number input -->
+      <div>
+        <label for="numberInput">Number Input (0-100):</label>
+        <input type="number" id="numberInput" min="0" max="100" value="50">
+      </div>
+
+      <!-- Slider / range -->
+      <div>
+        <label for="rangeInput">Slider (0-100): <span id="rangeVal">50</span></label>
+        <input type="range" id="rangeInput" min="0" max="100" value="50">
+      </div>
+
+      <!-- Dropdown / select -->
+      <div>
+        <label for="dropdown">Select Mode:</label>
+        <select id="dropdown">
+          <option value="auto">Auto</option>
+          <option value="manual">Manual</option>
+          <option value="safe">Safe</option>
+        </select>
+      </div>
+
+      <!-- Radio buttons -->
+      <div>
+        <label>Choose Option:</label>
+        <input type="radio" name="radioGroup" value="A" checked> Option A
+        <input type="radio" name="radioGroup" value="B"> Option B
+        <input type="radio" name="radioGroup" value="C"> Option C
+      </div>
+
+      <!-- Checkbox -->
+      <div>
+        <label>
+          <input type="checkbox" id="checkBox" checked> Enable Feature
+        </label>
+      </div>
+
+      <!-- Textarea -->
+      <div>
+        <label for="textArea">Multi-line Input:</label>
+        <textarea id="textArea" rows="4">Default content</textarea>
+      </div>
+
+      <button type="submit">Send to IPC Server</button>
+      <button type="button" id="resetBtn">Reset</button>
+    </form>
+
+    <pre id="response"></pre>
+  </main>
+
+  <script>
+    // Slider value display
+    const rangeInput = document.getElementById("rangeInput");
+    const rangeVal = document.getElementById("rangeVal");
+    rangeInput.addEventListener("input", () => {
+      rangeVal.textContent = rangeInput.value;
+    });
+
+    const form = document.getElementById("fancyForm");
+    const responseElem = document.getElementById("response");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // Handle form submit
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        text: document.getElementById("textInput").value,
+        number: parseInt(document.getElementById("numberInput").value),
+        slider: parseInt(rangeInput.value),
+        dropdown: document.getElementById("dropdown").value,
+        radio: document.querySelector('input[name="radioGroup"]:checked').value,
+        checkbox: document.getElementById("checkBox").checked,
+        textarea: document.getElementById("textArea").value
+      };
+
+      try {
+        const resp = await fetch("/setconfig", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        responseElem.textContent = await resp.text();
+      } catch (err) {
+        responseElem.textContent = "Error: " + err.message;
+      }
+    });
+
+    // Reset button
+    resetBtn.addEventListener("click", () => {
+      document.getElementById("textInput").value = "Default text";
+      document.getElementById("numberInput").value = 50;
+      rangeInput.value = 50; rangeVal.textContent = "50";
+      document.getElementById("dropdown").value = "auto";
+      document.querySelector('input[name="radioGroup"][value="A"]').checked = true;
+      document.getElementById("checkBox").checked = true;
+      document.getElementById("textArea").value = "Default content";
+      responseElem.textContent = "";
+    });
+  </script>
+</body>
+</html>
